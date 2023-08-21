@@ -1,4 +1,19 @@
 #!/usr/bin/python
+# @lint-avoid-python-3-compatibility-imports
+#
+# tcpaccept Trace TCP accept()s.
+#           For Linux, uses BCC, eBPF. Embedded C.
+#
+# USAGE: tcpaccept [-h] [-T] [-t] [-p PID] [-P PORTS] [-4 | -6]
+#
+# This uses dynamic tracing of the kernel inet_csk_accept() socket function
+# (from tcp_prot.accept), and will need to be modified to match kernel changes.
+#
+# Copyright (c) 2015 Brendan Gregg.
+# Licensed under the Apache License, Version 2.0 (the "License")
+#
+# 13-Oct-2015   Brendan Gregg   Created this.
+# 14-Feb-2016      "      "     Switch to bpf_perf_output.
 
 from __future__ import print_function
 from bcc.containers import filter_by_containers
@@ -13,6 +28,12 @@ from time import strftime
 examples = """examples:
     ./tcpaccept           # trace all TCP accept()s
     ./tcpaccept -t        # include timestamps
+    ./tcpaccept -P 80,81  # only trace port 80 and 81
+    ./tcpaccept -p 181    # only trace PID 181
+    ./tcpaccept --cgroupmap mappath  # only trace cgroups in this BPF map
+    ./tcpaccept --mntnsmap mappath   # only trace mount namespaces in the map
+    ./tcpaccept -4        # trace IPv4 family
+    ./tcpaccept -6        # trace IPv6 family
 """
 parser = argparse.ArgumentParser(
     description="Trace TCP accepts",
@@ -58,6 +79,18 @@ struct ipv4_data_t {
     char task[TASK_COMM_LEN];
 };
 BPF_PERF_OUTPUT(ipv4_events);
+
+struct ipv6_data_t {
+    u64 ts_us;
+    u32 pid;
+    unsigned __int128 saddr;
+    unsigned __int128 daddr;
+    u64 ip;
+    u16 lport;
+    u16 dport;
+    char task[TASK_COMM_LEN];
+};
+BPF_PERF_OUTPUT(ipv6_events);
 """
 
 #
@@ -145,9 +178,20 @@ int kretprobe__inet_csk_accept(struct pt_regs *ctx)
         bpf_get_current_comm(&data4.task, sizeof(data4.task));
         ipv4_events.perf_submit(ctx, &data4, sizeof(data4));
 
+    } else if (family == AF_INET6) {
+        struct ipv6_data_t data6 = {.pid = pid, .ip = 6};
+        data6.ts_us = bpf_ktime_get_ns() / 1000;
+        bpf_probe_read_kernel(&data6.saddr, sizeof(data6.saddr),
+            &newsk->__sk_common.skc_v6_rcv_saddr.in6_u.u6_addr32);
+        bpf_probe_read_kernel(&data6.daddr, sizeof(data6.daddr),
+            &newsk->__sk_common.skc_v6_daddr.in6_u.u6_addr32);
+        data6.lport = lport;
+        data6.dport = dport;
+        bpf_get_current_comm(&data6.task, sizeof(data6.task));
+        ipv6_events.perf_submit(ctx, &data6, sizeof(data6));
     }
     // else drop
-    
+
     return 0;
 }
 """
@@ -198,6 +242,22 @@ def print_ipv4_event(cpu, data, size):
         inet_ntop(AF_INET, pack("I", event.saddr)).encode(),
         event.lport))
 
+def print_ipv6_event(cpu, data, size):
+    event = b["ipv6_events"].event(data)
+    global start_ts
+    if args.time:
+        printb(b"%-9s" % strftime("%H:%M:%S").encode('ascii'), nl="")
+    if args.timestamp:
+        if start_ts == 0:
+            start_ts = event.ts_us
+        printb(b"%-9.3f" % ((float(event.ts_us) - start_ts) / 1000000), nl="")
+    printb(b"%-7d %-12.12s %-2d %-16s %-5d %-16s %-5d" % (event.pid,
+        event.task, event.ip,
+        inet_ntop(AF_INET6, event.daddr).encode(),
+        event.dport,
+        inet_ntop(AF_INET6, event.saddr).encode(),
+        event.lport))
+
 # initialize BPF
 b = BPF(text=bpf_text)
 
@@ -213,6 +273,7 @@ start_ts = 0
 
 # read events
 b["ipv4_events"].open_perf_buffer(print_ipv4_event)
+b["ipv6_events"].open_perf_buffer(print_ipv6_event)
 while 1:
     try:
         b.perf_buffer_poll()
