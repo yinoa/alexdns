@@ -102,9 +102,9 @@ int kretprobe__inet_csk_accept(struct pt_regs *ctx)
 
     // Since kernel v5.6 sk_protocol is its own u16 field and gso_max_segs
     // precedes sk_lingertime.
-    if (sk_lingertime_offset - gso_max_segs_offset == 2)
-        protocol = newsk->sk_protocol;
-    else if (sk_lingertime_offset - gso_max_segs_offset == 4)
+    //if (sk_lingertime_offset - gso_max_segs_offset == 2)
+    //    protocol = newsk->sk_protocol;
+    if (sk_lingertime_offset - gso_max_segs_offset == 4)
         // 4.10+ with little endian
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
         protocol = *(u8 *)((u64)&newsk->sk_gso_max_segs - 3);
