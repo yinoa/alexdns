@@ -109,4 +109,4 @@ while 1:
 	printb(b"%-6d %-12.12s %-16s %-16s %-4s %-4s" % (pid, task,
 	    inet_ntoa(int(saddr_hs, 16)),
 	    inet_ntoa(int(daddr_hs, 16)),
-	    dport_s, sport_s)
+	    dport_s, sport_s))
