@@ -62,7 +62,7 @@ int kretprobe__tcp_v4_connect(struct pt_regs *ctx)
         u16 sport = skp->__sk_common.skc_num;
 
 	// output
-	bpf_trace_printk("trace_tcp4connect %x %x %d\\n", saddr, daddr, ntohs(dport),ntohs(sport));
+	bpf_trace_printk("trace_tcp4connect %x %x %d %d \\n", saddr, daddr, ntohs(dport),ntohs(sport));
 
 	currsock.delete(&pid);
 
