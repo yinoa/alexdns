@@ -59,11 +59,11 @@ int kretprobe__tcp_v4_connect(struct pt_regs *ctx)
 	u32 saddr = skp->__sk_common.skc_rcv_saddr;
 	u32 daddr = skp->__sk_common.skc_daddr;
 	u16 dport = skp->__sk_common.skc_dport;
-  //add source port
-  struct inet_sock *inet;
-  struct sock *sk = sock->sk;
-  inet = inet_sk(sk);
-  u16 sport = ntohs(inet->inet_sport);
+        //add source port
+        struct inet_sock *inet;
+        struct sock *sk = sock->sk;
+        inet = inet_sk(sk);
+        u16 sport = ntohs(inet->inet_sport);
 
 	// output
 	bpf_trace_printk("trace_tcp4connect %x %x %d\\n", saddr, daddr, ntohs(dport),sport);
