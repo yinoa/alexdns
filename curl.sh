@@ -1,5 +1,5 @@
 #!/bin/bash
-# Example: ./dnsLoadTest.sh www.bing.com 168.63.129.16
+# Example: ./curl.sh
 
 dnsname=$1
 dnsserver=$2
