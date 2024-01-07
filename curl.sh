@@ -6,7 +6,7 @@ do
     (
         while true
         do
-            curl -I https://alexapp.alexazure.com --resolve alexapp.alexazure.com:443:13.107.226.46
+            curl -I https://alexapp.alexazure.com
             sleep 1
         done
     ) &
