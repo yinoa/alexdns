@@ -7,7 +7,7 @@ do
         while true
         do
             curl -I http://4.193.201.159
-            sleep 5
+            sleep 2
         done
     ) &
 done
