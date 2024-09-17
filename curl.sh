@@ -6,7 +6,7 @@ do
     (
         while true
         do
-            curl -I http://4.193.201.159
+            curl -I http://10.224.1.6
             sleep 2
         done
     ) &
