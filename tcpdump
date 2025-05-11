@@ -1,0 +1,48 @@
+##windows
+netsh trace start capture=yes scenario=netconnection provider=Microsoft-Windows-TCPIP level=5 maxsize=500 tracefile=C:\$($env:COMPUTERNAME)_TCPIP.etl
+
+netsh trace stop
+
+##linux
+tcpdump -W 3 -C 500 -i eth0 -w /tmp/$(hostname).pcap
+
+nohup tcpdump -i eth0 -W 40 -C 500 port 1433 or portrange 11000-11999 -w /xxxxxx/sqlclient.pcap &
+
+##mtr
+https://www.systutorials.com/docs/linux/man/8-mtr/
+
+mtr [-4|-6] [-F FILENAME] [--report] [--report-wide] [--xml] [--gtk] [--curses] [--displaymode MODE] [--raw] [--csv] [--json] [--split] [--no-dns] [--show-ips] [-o FIELDS] [-y IPINFO] [--aslookup] [-i INTERVAL] [-c COUNT] [-s PACKETSIZE] [-B BITPATTERN] [-G GRACEPERIOD] [-Q TOS] [--mpls] [-a ADDRESS] [-f FIRST-TTL] [-m MAX-TTL] [-U MAX-UNKNOWN] [--udp] [--tcp] [--sctp] [-P PORT] [-L LOCALPORT] [-Z TIMEOUT] [-M MARK]
+
+
+Run the following MTR test from the source with --tcp to make sure that the MTR will be using TCP not Icmp:
+
+mtr --tcp --port 22 --report --psize 1500 --report-cycles 10 20.41.78.238
+
+Also try to use the port that the service use (port 22 is an example).
+
+
+Now to better troublshoot this issue we will need you kindly  to run the following commands while the issue is happening:
+ 
+1- Traces/pcaps From source and destination when the issue is happening
+ 
+If you are using Linux please use the following commands:
+ 
+sudo tcpdump -s0 -vvv -C 500 -w $HOSTNAME.`date +%F.%H.%M.%S.`TEST.pcap
+ 
+If you are using Windows on the source side (as I know the destination on Azure is Linux) please use the following:
+ 
+netsh trace start capture=yes scenario=netconnection maxSize=500 tracefile=%temp%\%computername%_nettrace.etl 
+ 
+then to stop it after the issue got reproduced use:
+ 
+netsh trace stop
+ 
+2- Run the following MTR test from the source with --tcp to make sure that the MTR will be using TCP not Icmp:
+ 
+mtr --tcp --port 22 --report --psize 1500 --report-cycles 10 20.41.78.238
+ 
+Also try to use the port that the service use (port 22 is an example).
+ 
+3- Run Nping as follows from the source:
+ 
+nping  20.41.78.238 -p 22 -c 5000, where c is count <--- we need to use the same Port number used in MTR which is the port that the service is listening at.
