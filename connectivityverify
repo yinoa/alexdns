@@ -1,0 +1,264 @@
+===
+## Check connectivity and latency
+##change server and port in your environment
+while ($true) {
+    $server = "8.8.8.8"
+    $port = 443
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    
+    try {
+        $tcpClient = New-Object System.Net.Sockets.TcpClient
+        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $tcpClient.Connect($server, $port)
+        $stopwatch.Stop()
+        $latency = $stopwatch.ElapsedMilliseconds
+        $localEndPoint = $tcpClient.Client.LocalEndPoint
+        $localIP = $localEndPoint.Address.ToString()
+        $localPort = $localEndPoint.Port
+        Write-Host "$timestamp - source IP: $localIP port: $localPort connection to $server on port $port succeeded. Latency: $latency ms."
+        $tcpClient.Close()
+    } catch {
+        Write-Host "$timestamp - Connection to $server on port $port failed."
+    }
+    
+    Start-Sleep -Seconds 2
+}
+
+===Accurate one===
+## Check connectivity and latency
+## change server and port in your environment
+while ($true) {
+    $server = "20.209.226.33"
+    $port = 443
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    
+    try {
+        $tcpClient = New-Object System.Net.Sockets.TcpClient
+        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $tcpClient.Connect($server, $port)
+        $stopwatch.Stop()
+        $latencyMs = $stopwatch.Elapsed.TotalMilliseconds
+        $localEndPoint = $tcpClient.Client.LocalEndPoint
+        $localIP = $localEndPoint.Address.ToString()
+        $localPort = $localEndPoint.Port
+        
+        Write-Host "$timestamp - source IP: $localIP port: $localPort connection to $server on port $port succeeded. Latency: $latencyMs ms."
+        
+        $tcpClient.Close()
+    } catch {
+        Write-Host "$timestamp - Connection to $server on port $port failed."
+    }
+    
+    Start-Sleep -Seconds 2
+}
+
+====
+Stopwatch.ElapsedMilliseconds Property (System.Diagnostics) | Microsoft Learn
+1. ElapsedMilliseconds:
+• Type: Int64 (long)
+• Description: This property returns the elapsed time rounded down to the nearest whole millisecond. It provides a less precise measurement because it does not account for fractional milliseconds.
+• Example: If the elapsed time is 1.23456 seconds, ElapsedMilliseconds would return 1234 milliseconds 
+2. Elapsed.TotalMilliseconds:
+• Type: Double
+• Description: This property returns the total number of milliseconds, including both whole and fractional milliseconds. It provides a more precise measurement because it includes the fractional part of the milliseconds.
+• Example: If the elapsed time is 1.23456 seconds, Elapsed.TotalMilliseconds would return 1234.56 milliseconds 
+
+====
+# PowerShell script to continuously connect to 8.8.8.8 on port 443
+
+$targetAddress = "8.8.8.8"
+$targetPort = 443
+$intervalSeconds = 2
+
+Write-Host "Connecting to $($targetAddress):$($targetPort) every $($intervalSeconds) seconds. Press Ctrl+C to stop."
+
+while ($true) {
+    try {
+        # Attempt to create a TCP connection and measure the time
+        $socket = New-Object System.Net.Sockets.TcpClient
+        $startTime = Get-Date
+        $socket.Connect($targetAddress, $targetPort)
+        $endTime = Get-Date
+        $latency = ($endTime - $startTime).TotalMilliseconds
+        $localEndPoint = $socket.Client.LocalEndPoint  # Get the local endpoint
+        $localIpAddress = $localEndPoint.Address.IPAddressToString #Get the source IP Address
+        $localPort = $localEndPoint.Port             # Get the source port
+
+
+
+        if ($socket.Connected) {
+            Write-Host "$(Get-Date -Format "yyyy-MM-dd HH:mm:ssK") - Successfully connected to $($targetAddress):$($targetPort) from $($localIpAddress):$($localPort). Latency: $($latency) ms"
+            $socket.Close() # Close the connection immediately after successful connection.
+        }
+    }
+    catch {
+        # Catch any exceptions that occur during the connection attempt
+        Write-Host "$(Get-Date -Format "yyyy-MM-dd HH:mm:ss") - Failed to connect to $($targetAddress):$($targetPort). Error: $($_.Exception.Message)"
+    }
+    finally {
+        if ($socket) { # Check if $socket is not null
+            $socket.Close()
+        }
+    }
+
+    # Wait for the specified interval
+    Start-Sleep -Seconds $intervalSeconds
+}
+====
+# PowerShell script to continuously connect to 8.8.8.8 on port 443
+# and save output to a file
+
+$targetAddress = "8.8.8.8"
+$targetPort = 443
+$intervalSeconds = 2
+$logFilePath = ".\connection_log.txt"  # Path to the log file (relative to script location)
+
+# Create the log file if it doesn't exist
+if (-not (Test-Path $logFilePath)) {
+    New-Item -ItemType File -Path $logFilePath
+}
+
+Write-Host "Connecting to $($targetAddress):$($targetPort) every $($intervalSeconds) seconds. Press Ctrl+C to stop. Output will be saved to $logFilePath"
+
+while ($true) {
+    try {
+        # Attempt to create a TCP connection and measure the time
+        $socket = New-Object System.Net.Sockets.TcpClient
+        $startTime = Get-Date
+        $socket.Connect($targetAddress, $targetPort)
+        $endTime = Get-Date
+        $latency = ($endTime - $startTime).TotalMilliseconds
+        $localEndPoint = $socket.Client.LocalEndPoint  # Get the local endpoint
+        $localIpAddress = $localEndPoint.Address.IPAddressToString #Get the source IP Address
+        $localPort = $localEndPoint.Port             # Get the source port
+        $logMessage = "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssK") - Successfully connected to $($targetAddress):$($targetPort) from $($localIpAddress):$($localPort). Latency: $($latency) ms"
+
+
+        if ($socket.Connected) {
+            Write-Host $logMessage  # Output to console
+            Add-Content -Path $logFilePath -Value $logMessage # Append to log file
+            $socket.Close() # Close the connection immediately after successful connection.
+        }
+    }
+    catch {
+        # Catch any exceptions that occur during the connection attempt
+        $logMessage = "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ") - Failed to connect to $($targetAddress):$($targetPort). Error: $($_.Exception.Message)"
+        Write-Host $logMessage # Output to console
+        Add-Content -Path $logFilePath -Value $logMessage # Append to log file
+    }
+    finally {
+        if ($socket) { # Check if $socket is not null
+            $socket.Close()
+        }
+    }
+
+    # Wait for the specified interval
+    Start-Sleep -Seconds $intervalSeconds
+}
+
+
+====
+
+##shell
+
+#!/bin/bash
+
+# Prompt the user to enter the target IP address
+read -p "Enter target IP address: " target_ip
+
+# Prompt the user to enter the target port number
+read -p "Enter target port number: " target_port
+
+source_port_range_start=1024
+source_port_range_end=65535
+
+while true; do
+  source_port=$((RANDOM % (source_port_range_end - source_port_range_start + 1) + source_port_range_start))
+
+  start_time=$(date +%s%N) # Record start time in nanoseconds
+
+  if nc -z "$target_ip" "$target_port" -p "$source_port" -w 1; then
+    connection_status="Success"
+    end_time=$(date +%s%N)   # Record end time in nanoseconds
+    latency_ns=$((end_time - start_time))
+    latency_ms=$((latency_ns / 1000000))
+    latency="${latency_ms} ms"
+  else
+    connection_status="Failure"
+    latency="N/A"
+  fi
+
+  current_date=$(date "+%Y-%m-%d %H:%M:%S")
+
+  source_ip=$(ip addr show |grep eth| grep -Eo 'inet [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | awk '{print $2}' | head -n 1)
+
+  echo "$current_date"
+  echo "Source IP: $source_ip, Source Port: $source_port, Destination IP: $target_ip, Destination Port: $target_port, Connection: $connection_status, Latency: $latency"
+
+  sleep 2
+done
+
+===multithreads===
+#!/bin/bash
+
+# Set the static target IP address and port
+target_ip="8.8.8.8"
+target_port="80"
+num_connections=1
+#-w --wait unit second
+timeout=1
+interval=10
+
+source_port_range_start=1024
+source_port_range_end=65535
+
+probe_connection() {
+  local sp=$1
+  start_time=$(date +%s%N)
+  if nc -z "$target_ip" "$target_port" -p "$sp" -w "$timeout"; then
+    local connection_status="Success"
+    local end_time=$(date +%s%N)
+    local latency_ns=$((end_time - start_time))
+    local latency_ms=$((latency_ns / 1000000))
+    local latency="${latency_ms} ms"
+  else
+    local connection_status="Failure"
+    local latency="N/A"
+  fi
+
+  local current_date=$(date "+%Y-%m-%d %H:%M:%S")
+  local source_ip=$(ip addr show | grep eth | grep -Eo 'inet [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | awk '{print $2}' | head -n 1)
+
+  echo "$current_date - Thread $sp - Source IP: $source_ip, Source Port: $sp, Destination IP: $target_ip, Destination Port: $target_port, Connection: $connection_status, Latency: $latency"
+}
+
+while true; do
+  pids=()
+  for i in $(seq 1 "$num_connections"); do
+    source_port=$((RANDOM % (source_port_range_end - source_port_range_start + 1) + source_port_range_start))
+    probe_connection "$source_port" &
+    pids+=("$!")
+  done
+
+  # Wait for all background processes to finish
+  for pid in "${pids[@]}"; do
+    wait "$pid"
+  done
+
+  sleep "$interval"
+done
+
+====
+# cat tcpserv.sh
+#!/bin/bash
+# tcp_receiver.sh
+# Listen on port 80 continuously
+
+PORT=80
+
+echo "Starting TCP listener on port ${PORT}..."
+while true; do
+    # -l: listen mode; -p: port
+    nc -l -p ${PORT}
+    echo "A connection closed."
+done
