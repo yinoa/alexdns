@@ -4,7 +4,7 @@
 while ($true) {
     $server = "8.8.8.8"
     $port = 443
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ssK"
     
     try {
         $tcpClient = New-Object System.Net.Sockets.TcpClient
@@ -30,7 +30,7 @@ while ($true) {
 while ($true) {
     $server = "8.8.8.8"
     $port = 443
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ssK"
     
     try {
         $tcpClient = New-Object System.Net.Sockets.TcpClient
@@ -142,7 +142,7 @@ while ($true) {
     }
     catch {
         # Catch any exceptions that occur during the connection attempt
-        $logMessage = "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ") - Failed to connect to $($targetAddress):$($targetPort). Error: $($_.Exception.Message)"
+        $logMessage = "$(Get-Date -Format "yyyy-MM-ddTHH:mm:ssK") - Failed to connect to $($targetAddress):$($targetPort). Error: $($_.Exception.Message)"
         Write-Host $logMessage # Output to console
         Add-Content -Path $logFilePath -Value $logMessage # Append to log file
     }
