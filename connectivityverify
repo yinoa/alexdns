@@ -28,7 +28,7 @@ while ($true) {
 ## Check connectivity and latency
 ## change server and port in your environment
 while ($true) {
-    $server = "20.209.226.33"
+    $server = "8.8.8.8"
     $port = 443
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     
